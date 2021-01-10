@@ -1,0 +1,105 @@
+# PartyFactionsTop
+# v1.0 (By ThreadSafety a.k.a evancolewright)
+# Official File Configuration
+
+# =====================================================================================================================
+# DATABASE SETTINGS
+
+# The database is NOT required, and is not used by the plugin internally.
+# The purpose of the database is simply to dump values from each calculation into an
+# online source for the purpose of displaying them on the web.
+# This makes it possible to implement a "Top factions" interface into our website in the future.
+# =====================================================================================================================
+database:
+  enabled: true
+  host: "198.245.51.96"
+  name: "db_224859"
+  username: "db_224859"
+  password: "eb550d4603"
+
+# =====================================================================================================================
+# FTOP SETTINGS
+#
+# These are the settings and timings for the FTop.
+# These settings can make or break the performance of the server and the plugin itself.  It is recommended that
+# you keep the current settings that are here by default as I have tested them EXTENSIVELY, and they work on even
+# the LARGEST workloads (10,000+ chunk scans).  Nevertheless, feel free to test as much as you like.
+# =====================================================================================================================
+settings:
+  recalculation_timeout: 60  # This is the duration between each ftop calculation in MINUTES.
+  recalcuation_chunks_each_tick: 30  # During the calculation, this is how many chunks will be added to the queue for recalculation every 1/20 of a second.
+  # With this set to 30, 600 chunks will be scanned every second.
+  include_player_balances: false  # Should FTop include player balances in its rankings?
+
+# =====================================================================================================================
+# MESSAGES
+#
+# Yea, this section is pretty self-explanatory.
+# =====================================================================================================================
+
+messages:
+  recalculation_starting:
+    - ""
+    - "&e[&c!&e] &e&6FACTIONS&6&lTOP &eis recalculating.  You will be notified when this process has completed."
+    - "&e[&c!&e] &aUse &n/f top&r to view the process."
+    - ""
+  recalculation_completed:
+    - ""
+    - "&e[&c!&e] &a&6FACTIONS&6&lTOP &ahas been recalculated.  You may now do /f top."
+    - "&e[&c!&e] &aTook &n{TIME}&r&a."
+
+
+  usage: "&cUsage: /f top <page>"
+
+# =====================================================================================================================
+# TOP LIST
+#
+# This is the message that you receive when performing /f top
+# You may use the placeholders that are set in the worths.yml file
+# anywhere you wish inside here.
+#
+# Placeholders:
+# {LEADER} - the leader of the faction
+# {FACTION} - the faction
+# {OVERALL_WORTH} - the overall worth of the faction
+# {BLOCK_WORTH} - the overall worth of the faction
+# {SPAWNER_WORTH} - the overall spawner worth of the faction
+# {PAGE} - the current page of the f top
+# {PLACE} - the current position of the faction on ftop
+
+# =====================================================================================================================
+top_list:
+  per_page: 5
+  top_border: "&e&m-------------&8&l[&6&lFACTIONSTOP &7(&a{PAGE}&7)&8&l]&e&m-------------"
+  format: "&8&l[&a{PLACE}&8&l] &6&l{FACTION}  &a&l${OVERALL_WORTH}"
+  tooltip:
+    - "&e[&c!&e] &6Faction&7: &e {FACTION}"
+    - "&e&lLeader&7: &a{LEADER}"
+    - ""
+    - "&e&lSPAWNER VALUE&7: &a${SPAWNER_WORTH}"
+    - "&e&lBLOCK VALUE&7: &a${BLOCK_WORTH}"
+    - ""
+    - "&e&lSPAWNER BREAKDOWN"
+    - "&6&lIron Golem&7: &a%iron_golem%"
+    - "&6&lZombie&7: &a%zombie%"
+
+worths:
+  blocks:
+    1:
+      type: HOPPER
+      worth: 5000
+      placeholder: "%hopper%"
+    2:
+      type: BEACON
+      worth: 10000
+      placeholder: "%beacon%"
+  spawners:
+    1:
+      type: IRON_GOLEM
+      worth: 100000
+      placeholder: "%iron_golem%"
+    2:
+      type: ZOMBIE
+      worth: 50000
+      placeholder: "%zombie%"
+

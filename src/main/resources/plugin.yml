@@ -1,0 +1,14 @@
+name: RoyaleFTop
+version: ${project.version}
+main: io.github.evancolewright.royaleftop.RoyaleFTop
+api-version: 1.8.8
+authors: [ ThreadSafety ]
+description: An asynchronously-focused and comprehensive worth calculator for FactionsUUID.
+website: evancolewright.github.io
+depend:
+  - Factions
+  - Vault
+commands:
+  factionstop:
+    aliases:
+      - ftop
