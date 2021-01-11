@@ -22,13 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 public class RecalculationTask implements Runnable
 {
-
-    /**
-     * This method was taken and edited from https://github.com/novucs/factions-top.
-     * I have done away with the Thread class, and instead resort to an ExecutorService
-     * with runnable implementations.
-     */
-
     private final RoyaleFTop plugin;
     private final FileConfiguration config;
 
@@ -39,11 +32,23 @@ public class RecalculationTask implements Runnable
     private long startTime;
     private int taskID;
 
+    // Progress bar
+    @Getter
+    private int initialSize = 0;
+    @Getter
+    private int currentSize;
+
+    @Getter
+    private long previousCalculationTimestamp = 0;
+
+    @Getter
+    private static boolean hasFinishedInitialCalcultion = false;
+
+
     public RecalculationTask(RoyaleFTop plugin)
     {
         this.plugin = plugin;
         this.config = plugin.getConfig();
-        this.chunkRunnerTask = new ChunkScannerTask(plugin);
 
         executorService = Executors.newSingleThreadExecutor();
     }
@@ -54,14 +59,16 @@ public class RecalculationTask implements Runnable
         {
             if (executorService.isShutdown())
             {
-                // ExecutorService's are not reusable, therefore we need a new one!
                 this.executorService = Executors.newSingleThreadExecutor();
             }
+            this.chunkRunnerTask = new ChunkScannerTask(plugin);
             chunkStack.addAll(getAllChunks());
+            this.initialSize = chunkStack.size();
+            this.currentSize = 0;
             this.startTime = System.currentTimeMillis();
             plugin.getCacheManager().getAllFactionCaches().forEach(cache -> cache.reset());
             this.executorService.submit(this.chunkRunnerTask);
-            this.taskID = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, this, 0,1);
+            this.taskID = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, this, 0, 1);
             Bukkit.getOnlinePlayers().forEach(player -> ChatUtils.sendMessage(player, config.getStringList("messages.recalculation_starting")));
         }
     }
@@ -82,6 +89,12 @@ public class RecalculationTask implements Runnable
         return !chunkStack.isEmpty();
     }
 
+
+    public int getChunkStackSize()
+    {
+        return this.chunkStack.size();
+    }
+
     @Override
     public void run()
     {
@@ -92,26 +105,39 @@ public class RecalculationTask implements Runnable
             {
                 break;
             }
+
+            this.currentSize++;
             LazyChunk lazyChunk = this.chunkStack.pop();
             Chunk chunk = lazyChunk.asChunk();
+            Faction faction = Factions.getInstance().getFactionById(lazyChunk.getFactionCache().getFactionID());
 
-            if (chunk.load())
+            if (chunk != null && chunk.load() && faction != null)
             {
                 this.chunkRunnerTask.queue.add(lazyChunk);
-            } else {
-                System.out.print("chunk no load");
             }
         }
 
-        // Checking isRunning is not enough, that just means that we sent all the chunks over to the consumer queue.
-        // We must check the queue size as well in order to get a "more" accurate result.
         if (!isRunning())
         {
-            System.out.print("cancelled");
             plugin.getServer().getScheduler().cancelTask(taskID);
-            Bukkit.getOnlinePlayers().forEach(player -> ChatUtils.sendMessage(player, getCompletionMessage(System.currentTimeMillis() - this.startTime)));
-            executorService.shutdown();
-            chunkRunnerTask = new ChunkScannerTask(plugin);
+
+            new BukkitRunnable()
+            {
+                @Override
+                public void run()
+                {
+                    if (!hasFinishedInitialCalcultion)
+                    {
+                        hasFinishedInitialCalcultion = true;
+                    }
+                    executorService.shutdownNow();
+                    previousCalculationTimestamp = System.currentTimeMillis();
+                    Bukkit.getOnlinePlayers().forEach(player -> ChatUtils.sendMessage(player, getCompletionMessage(System.currentTimeMillis() - startTime)));
+                    chunkRunnerTask = new ChunkScannerTask(plugin);
+                    plugin.getWorthManager().updateLeaderboard();
+
+                }
+            }.runTaskLater(this.plugin, 60);
         }
     }
 
@@ -122,10 +148,7 @@ public class RecalculationTask implements Runnable
         String time = String.format("%2dm%2ds", min, sec);
 
         List<String> formattedCompletionMessage = new ArrayList<>();
-        for (String s : config.getStringList("messages.recalculation_completed"))
-        {
-            formattedCompletionMessage.add(s.replace("{TIME}", time));
-        }
+        config.getStringList("messages.recalculation_completed").forEach(s -> formattedCompletionMessage.add(s.replace("{TIME}", time)));
         return formattedCompletionMessage;
     }
 
@@ -144,6 +167,8 @@ public class RecalculationTask implements Runnable
     }
 
 }
+
+
 
 
 

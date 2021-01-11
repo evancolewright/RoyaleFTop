@@ -3,7 +3,9 @@ package io.github.evancolewright.royaleftop.utils;
 import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
 import io.github.evancolewright.royaleftop.RoyaleFTop;
+import io.github.evancolewright.royaleftop.entity.BlockWorth;
 import io.github.evancolewright.royaleftop.entity.FactionCache;
+import io.github.evancolewright.royaleftop.entity.SpawnerWorth;
 import io.github.evancolewright.royaleftop.entity.WorthType;
 import io.github.evancolewright.royaleftop.managers.WorthManager;
 import mkremins.fanciful.FancyMessage;
@@ -14,6 +16,7 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class PageHandler
 {
@@ -51,19 +54,20 @@ public class PageHandler
     private List<FancyMessage> getAllFTopValues()
     {
         List<FancyMessage> messages = new ArrayList<>();
-        for (int i = 0; i < caches.size(); i++)
+        int acc = 1;
+        for (Map.Entry<FactionCache, Double> entry : plugin.getWorthManager().getSortedLeaderBoard().entrySet())
         {
-            messages.add(getSingleFTopValue(caches.get(i), i + 1));
+            messages.add(getSingleFTopValue(entry.getKey(), acc));
+            acc++;
         }
         return messages;
     }
 
     private FancyMessage getSingleFTopValue(FactionCache cache, int place)
     {
-        double overallWorth = plugin.getWorthManager().getSpawnerWorth(cache);
-        Bukkit.broadcastMessage(overallWorth + "eeee");
-        double spawnerWorth = 5000.00;
-        double blockWorth = 5000.00;
+        double overallWorth = plugin.getWorthManager().getOverallWorth(cache);
+        double spawnerWorth = plugin.getWorthManager().getSpawnerWorth(cache);
+        double blockWorth = plugin.getWorthManager().getBlockWorth(cache);
         Faction faction = Factions.getInstance().getFactionById(cache.getFactionID());
         String leaderName = faction.getFPlayerAdmin().getName();
 
@@ -74,8 +78,10 @@ public class PageHandler
                         , faction, overallWorth, spawnerWorth, blockWorth, place)
         );
 
-        List<String> tooltip = new ArrayList<>(config.getStringList("top_list.tooltip"));
+        List<String> tooltip = new ArrayList<>(this.getHoverMessage(cache));
         fancyMessage.tooltip(ChatUtils.colorize(tooltip));
+
+        fancyMessage.command("/ftop");
 
         return fancyMessage;
     }
@@ -90,5 +96,33 @@ public class PageHandler
                         .replace("{OVERALL_WORTH}", MoneyUtils.format(overallWorth))
                         .replace("{SPAWNER_WORTH}", MoneyUtils.format(spawnerWorth))
                         .replace("{BLOCK_WORTH}", MoneyUtils.format(blockWorth)));
+    }
+
+    public List<String> getHoverMessage(FactionCache factionCache)
+    {
+        List<String> defaultMessage = plugin.getConfig().getStringList("top_list.tooltip");
+        Faction faction = Factions.getInstance().getFactionById(factionCache.getFactionID());
+        List<String> returnMe = new ArrayList<>();
+        for (String s : defaultMessage)
+        {
+            // Replace default placeholders
+            s = s.replace("{FACTION}", faction.getTag())
+                    .replace("{LEADER}", faction.getFPlayerAdmin().getName())
+                    .replace("{OVERALL_WORTH}", MoneyUtils.format(plugin.getWorthManager().getOverallWorth(factionCache)))
+                    .replace("{SPAWNER_WORTH}", MoneyUtils.format(plugin.getWorthManager().getSpawnerWorth(factionCache)))
+                    .replace("{BLOCK_WORTH}", MoneyUtils.format(plugin.getWorthManager().getBlockWorth(factionCache)));
+
+            // line
+            for (BlockWorth blockWorth : plugin.getWorthManager().getBlockWorths())
+            {
+                s = s.replace(blockWorth.getPlaceholder(), factionCache.getBlockCount(blockWorth.getMaterial()) + "");
+            }
+            for (SpawnerWorth spawnerWorth : plugin.getWorthManager().getSpawnerWorths())
+            {
+                s = s.replace(spawnerWorth.getPlaceholder(), factionCache.getSpawnerCount(spawnerWorth.getEntityType()) + "");
+            }
+            returnMe.add(ChatUtils.colorize(s));
+        }
+        return returnMe;
     }
 }

@@ -48,8 +48,10 @@ messages:
     - "&e[&c!&e] &a&6FACTIONS&6&lTOP &ahas been recalculated.  You may now do /f top."
     - "&e[&c!&e] &aTook &n{TIME}&r&a."
 
-
   usage: "&cUsage: /f top <page>"
+  calculating_ftop:
+    - "&8[&c!&8] &eFactionsTop is currently recalculating!"
+    - "&8[&c!&8] &e&lPROGRESS&8&l: {PROGRESS}"
 
 # =====================================================================================================================
 # TOP LIST
@@ -71,13 +73,13 @@ messages:
 top_list:
   per_page: 5
   top_border: "&e&m-------------&8&l[&6&lFACTIONSTOP &7(&a{PAGE}&7)&8&l]&e&m-------------"
-  format: "&8&l[&a{PLACE}&8&l] &6&l{FACTION}  &a&l${OVERALL_WORTH}"
+  format: "&8&l[&a{PLACE}&8&l] &6&l{FACTION}  &a&l{OVERALL_WORTH}"
   tooltip:
     - "&e[&c!&e] &6Faction&7: &e {FACTION}"
     - "&e&lLeader&7: &a{LEADER}"
     - ""
-    - "&e&lSPAWNER VALUE&7: &a${SPAWNER_WORTH}"
-    - "&e&lBLOCK VALUE&7: &a${BLOCK_WORTH}"
+    - "&e&lSPAWNER VALUE&7: &a{SPAWNER_WORTH}"
+    - "&e&lBLOCK VALUE&7: &a{BLOCK_WORTH}"
     - ""
     - "&e&lSPAWNER BREAKDOWN"
     - "&6&lIron Golem&7: &a%iron_golem%"

@@ -50,7 +50,7 @@ public final class RoyaleFTop extends JavaPlugin
     @Getter
     private DatabaseManager databaseManager;
 
-    // Tasks
+    @Getter
     private RecalculationTask recalculationTask;
 
 
@@ -87,17 +87,16 @@ public final class RoyaleFTop extends JavaPlugin
             this.getCommand("factionstop").setExecutor(new FTopCommand(this));
             this.getCommand("factionstop").setTabCompleter(new FTopCommand(this));
 
-            // Schedule initial tasks
+            // Schedule update task
             recalculationTask = new RecalculationTask(this);
             new BukkitRunnable()
             {
-
                 @Override
                 public void run()
                 {
                     recalculationTask.initialize();
                 }
-            }.runTaskLater(this, 150);
+            }.runTaskTimer(this, 20, 20 * 60 * getConfig().getInt("settings.recalculation_timeout"));
 
         } else
         {
@@ -150,7 +149,7 @@ public final class RoyaleFTop extends JavaPlugin
      * Check for the existence of VaultAPI and an Economy provider plugin.
      * If false, you will no longer be able to include player balances in calculation
      *
-     * @return  The existence of Vault and an Economy
+     * @return The existence of Vault and an Economy
      */
     private boolean setupEconomy()
     {

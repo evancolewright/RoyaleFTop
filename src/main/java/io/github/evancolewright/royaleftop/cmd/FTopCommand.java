@@ -1,7 +1,11 @@
 package io.github.evancolewright.royaleftop.cmd;
 
+import com.sun.javaws.progress.Progress;
 import io.github.evancolewright.royaleftop.RoyaleFTop;
+import io.github.evancolewright.royaleftop.utils.ChatUtils;
 import io.github.evancolewright.royaleftop.utils.PageHandler;
+import io.github.evancolewright.royaleftop.utils.ProgressBar;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -33,10 +37,20 @@ public class FTopCommand implements CommandExecutor, TabExecutor
             PageHandler pageHandler = new PageHandler(plugin);
             if (args.length == 0)
             {
+                if (plugin.getRecalculationTask().isRunning())
+                {
+                    sendProgressMessage(player);
+                    return false;
+                }
                 pageHandler.sendPage(player, 1);
                 return true;
             } else if (args.length == 1)
             {
+                if (plugin.getRecalculationTask().isRunning())
+                {
+                    sendProgressMessage(player);
+                    return false;
+                }
                 if (isInt(args[0]))
                 {
                     pageHandler.sendPage(player, Integer.valueOf(args[0]));
@@ -50,8 +64,7 @@ public class FTopCommand implements CommandExecutor, TabExecutor
                     if (sub.equalsIgnoreCase("recalculate"))
                     {
                         player.sendMessage("Recalculate todo");
-                    }
-                    else if (sub.equalsIgnoreCase("terminate"))
+                    } else if (sub.equalsIgnoreCase("terminate"))
                     {
                         player.sendMessage("Terminate todo");
                     } else if (sub.equalsIgnoreCase("reload"))
@@ -89,5 +102,24 @@ public class FTopCommand implements CommandExecutor, TabExecutor
         {
             return false;
         }
+    }
+
+    private void sendProgressMessage(Player player)
+    {
+        List<String> recalc = new ArrayList<>();
+
+        for (String s : plugin.getConfig().getStringList("messages.calculating_ftop"))
+        {
+            recalc.add(s.replace("{PROGRESS}",
+                    ProgressBar.getProgressBar(
+                            plugin.getRecalculationTask().getChunkStackSize(),
+                            plugin.getRecalculationTask().getInitialSize(),
+                            40,
+                            '|',
+                            ChatColor.RED, ChatColor.GREEN)));
+        }
+
+        ChatUtils.sendMessage(player, recalc);
+
     }
 }

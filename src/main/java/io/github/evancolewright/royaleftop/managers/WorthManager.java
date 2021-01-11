@@ -5,6 +5,7 @@ import io.github.evancolewright.royaleftop.entity.BlockWorth;
 import io.github.evancolewright.royaleftop.entity.FactionCache;
 import io.github.evancolewright.royaleftop.entity.SpawnerWorth;
 import io.github.evancolewright.royaleftop.entity.WorthType;
+import io.github.evancolewright.royaleftop.utils.WorthSorter;
 import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -24,7 +25,7 @@ public class WorthManager
     @Getter
     private final List<SpawnerWorth> spawnerWorths = new ArrayList<>();
     @Getter
-    private final Map<FactionCache, Long> leaderboard = new HashMap<>();
+    private final Map<FactionCache, Double> leaderboard = new HashMap<>();
 
     public WorthManager(RoyaleFTop plugin)
     {
@@ -45,6 +46,24 @@ public class WorthManager
 
        return spawnerWorth;
    }
+
+    public double getBlockWorth(FactionCache factionCache)
+    {
+        double blockWorth = 0.0;
+        for (Map.Entry<Material, Integer> block : factionCache.getBlocks().entrySet())
+        {
+            Material type = block.getKey();
+            int amount = block.getValue();
+            blockWorth += (long) (getBlockWorth(type) * amount);
+        }
+
+        return blockWorth;
+    }
+
+    public double getOverallWorth(FactionCache cache)
+    {
+        return this.getBlockWorth(cache) + this.getSpawnerWorth(cache);
+    }
 
     public void updateBlockWorth(FactionCache cache, Material material)
     {
@@ -73,6 +92,21 @@ public class WorthManager
             cache.addSpawner(entityType);
         }
 
+    }
+
+    public Map<FactionCache, Double> getSortedLeaderBoard()
+    {
+        WorthSorter<FactionCache, Double> sorter = new WorthSorter<>(this.leaderboard);
+
+        return sorter.getSortedMap();
+    }
+
+    public void updateLeaderboard()
+    {
+        for (FactionCache cache : plugin.getCacheManager().getAllFactionCaches())
+        {
+            this.leaderboard.put(cache, this.getOverallWorth(cache));
+        }
     }
 
 

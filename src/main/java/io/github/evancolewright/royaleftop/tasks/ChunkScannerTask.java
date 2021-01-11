@@ -36,71 +36,60 @@ public class ChunkScannerTask implements Runnable
     @Override
     public void run()
     {
-        try
+        while (!Thread.currentThread().isInterrupted())
         {
-            while (!Thread.currentThread().isInterrupted())
+            accumulator++;
+            System.out.print(accumulator + " :");
+            LazyChunk currentChunk;
+            try
             {
-                accumulator++;
-                System.out.print(accumulator + " :");
-                LazyChunk currentChunk;
-                try
+                currentChunk = queue.take();
+            } catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            ChunkSnapshot snapshot = currentChunk.getSnapshot();
+            for (int y = 0; y < 256; y++)
+            {
+                for (int x = 0; x < 16; x++)
                 {
-                    currentChunk = queue.take();
-                } catch (InterruptedException e)
-                {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-                ChunkSnapshot snapshot = currentChunk.getSnapshot();
-                for (int y = 0; y < 256; y++)
-                {
-                    for (int x = 0; x < 16; x++)
+                    for (int z = 0; z < 16; z++)
                     {
-                        for (int z = 0; z < 16; z++)
+                        Material material = Material.getMaterial(snapshot.getBlockTypeId(x, y, z));
+
+                        if (material == Material.MOB_SPAWNER)
                         {
-                            Material material = Material.getMaterial(snapshot.getBlockTypeId(x, y, z));
+                            int finalX = x;
+                            int finalY = y;
+                            int finalZ = z;
 
-                            if (material == Material.MOB_SPAWNER)
+                            // Run on the main thread.
+                            new BukkitRunnable()
                             {
-                                // Anon classes require final variable copies ;/
-                                int finalX = x;
-                                int finalY = y;
-                                int finalZ = z;
-
-                                // Run on the main thread.
-                                new BukkitRunnable()
+                                @Override
+                                public void run()
                                 {
-                                    @Override
-                                    public void run()
+                                    final Chunk chunk = Bukkit.getWorld(snapshot.getWorldName()).getChunkAt(snapshot.getX(), snapshot.getZ());
+                                    final BlockState blockState = chunk.getBlock(finalX, finalY, finalZ).getState();
+                                    if (!(blockState instanceof CreatureSpawner))
                                     {
-                                        final Chunk chunk = Bukkit.getWorld(snapshot.getWorldName()).getChunkAt(snapshot.getX(), snapshot.getZ());
-                                        final BlockState blockState = chunk.getBlock(finalX, finalY, finalZ).getState();
-                                        if (!(blockState instanceof CreatureSpawner))
-                                        {
-                                            return;
-                                        }
-                                        final CreatureSpawner creatureSpawner = (CreatureSpawner) blockState;
-                                        plugin.getWorthManager().updateSpawnerWorth(currentChunk.getFactionCache(), creatureSpawner.getSpawnedType());
-
+                                        return;
                                     }
-                                }.runTask(plugin);
-                            } else
-                            {
-                                plugin.getWorthManager().updateBlockWorth(currentChunk.getFactionCache(), material);
-                            }
+                                    final CreatureSpawner creatureSpawner = (CreatureSpawner) blockState;
+                                    plugin.getWorthManager().updateSpawnerWorth(currentChunk.getFactionCache(), creatureSpawner.getSpawnedType());
+
+                                }
+                            }.runTask(plugin);
+                        } else
+                        {
+                            plugin.getWorthManager().updateBlockWorth(currentChunk.getFactionCache(), material);
                         }
                     }
                 }
             }
-
-            if (Thread.currentThread().isInterrupted() || !Thread.currentThread().isAlive())
-            {
-                System.out.println("========Interupted! or dead");
-            }
-        } catch (Exception e)
-        {
-            e.printStackTrace();
         }
+
     }
 
 }
