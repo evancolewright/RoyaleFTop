@@ -63,13 +63,27 @@ public class FTopCommand implements CommandExecutor, TabExecutor
                 {
                     if (sub.equalsIgnoreCase("recalculate"))
                     {
-                        player.sendMessage("Recalculate todo");
+                        if (plugin.getRecalculationTask().isRunning())
+                        {
+                            player.sendMessage(ChatColor.RED + "Recalculation task is already running!");
+
+                        } else {
+                            plugin.getRecalculationTask().initialize();
+                        }
                     } else if (sub.equalsIgnoreCase("terminate"))
                     {
-                        player.sendMessage("Terminate todo");
+                        if (plugin.getRecalculationTask().isRunning())
+                        {
+                            plugin.getRecalculationTask().terminate();
+                            player.sendMessage(ChatColor.GREEN + "Recalculation task has been cancelled.");
+
+                        } else {
+                            player.sendMessage(ChatColor.RED + "A recalculation task is not running!");
+                        }
                     } else if (sub.equalsIgnoreCase("reload"))
                     {
-                        player.sendMessage("Reload todo");
+                        plugin.reloadConfig();
+                        player.sendMessage(ChatColor.GREEN + "Config reloaded.");
                     }
                 }
             }

@@ -1,10 +1,9 @@
-package io.github.evancolewright.royaleftop.entity;
+package io.github.evancolewright.royaleftop.models;
 
 import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
 import lombok.Getter;
 import org.bukkit.Material;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 
 import java.util.HashMap;

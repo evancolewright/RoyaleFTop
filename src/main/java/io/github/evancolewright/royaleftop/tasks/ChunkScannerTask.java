@@ -1,10 +1,7 @@
 package io.github.evancolewright.royaleftop.tasks;
 
 import io.github.evancolewright.royaleftop.RoyaleFTop;
-import io.github.evancolewright.royaleftop.entity.FactionCache;
-import io.github.evancolewright.royaleftop.entity.LazyChunk;
-import io.github.evancolewright.royaleftop.managers.CacheManager;
-import lombok.Getter;
+import io.github.evancolewright.royaleftop.models.LazyChunk;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
@@ -21,16 +18,9 @@ public class ChunkScannerTask implements Runnable
     private final RoyaleFTop plugin;
     protected final BlockingQueue<LazyChunk> queue = new LinkedBlockingQueue<>();
 
-    protected volatile int accumulator = 0;
-
     public ChunkScannerTask(RoyaleFTop plugin)
     {
         this.plugin = plugin;
-    }
-
-    protected synchronized int getQueueSize()
-    {
-        return queue.size();
     }
 
     @Override
@@ -38,8 +28,6 @@ public class ChunkScannerTask implements Runnable
     {
         while (!Thread.currentThread().isInterrupted())
         {
-            accumulator++;
-            System.out.print(accumulator + " :");
             LazyChunk currentChunk;
             try
             {

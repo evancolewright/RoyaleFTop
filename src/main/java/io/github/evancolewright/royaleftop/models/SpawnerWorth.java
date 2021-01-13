@@ -1,18 +1,18 @@
-package io.github.evancolewright.royaleftop.entity;
+package io.github.evancolewright.royaleftop.models;
 
 import lombok.Getter;
-import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
 
 @Getter
-public class BlockWorth
+public class SpawnerWorth
 {
-    private final Material material;
+    private final EntityType entityType;
     private final double worth;
     private final String placeholder;
 
-    public BlockWorth(Material material, double worth, String placeholder)
+    public SpawnerWorth(EntityType entityType, double worth, String placeholder)
     {
-        this.material = material;
+        this.entityType = entityType;
         this.worth = worth;
         this.placeholder = placeholder;
     }
@@ -37,8 +37,8 @@ public class BlockWorth
     @Override
     public String toString()
     {
-        return "BlockWorth{" +
-                "material=" + material +
+        return "SpawnerWorth{" +
+                "entityType=" + entityType +
                 ", worth=" + worth +
                 ", placeholder='" + placeholder + '\'' +
                 '}';

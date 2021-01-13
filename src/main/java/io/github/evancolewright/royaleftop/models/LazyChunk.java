@@ -1,4 +1,4 @@
-package io.github.evancolewright.royaleftop.entity;
+package io.github.evancolewright.royaleftop.models;
 
 import lombok.Getter;
 import org.bukkit.Bukkit;

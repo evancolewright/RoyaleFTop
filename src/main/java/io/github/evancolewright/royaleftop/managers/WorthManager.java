@@ -1,10 +1,9 @@
 package io.github.evancolewright.royaleftop.managers;
 
 import io.github.evancolewright.royaleftop.RoyaleFTop;
-import io.github.evancolewright.royaleftop.entity.BlockWorth;
-import io.github.evancolewright.royaleftop.entity.FactionCache;
-import io.github.evancolewright.royaleftop.entity.SpawnerWorth;
-import io.github.evancolewright.royaleftop.entity.WorthType;
+import io.github.evancolewright.royaleftop.models.BlockWorth;
+import io.github.evancolewright.royaleftop.models.FactionCache;
+import io.github.evancolewright.royaleftop.models.SpawnerWorth;
 import io.github.evancolewright.royaleftop.utils.WorthSorter;
 import lombok.Getter;
 import org.bukkit.Material;
@@ -31,21 +30,21 @@ public class WorthManager
     {
         this.plugin = plugin;
         this.config = plugin.getConfig();
-        loadWorths();
+        this.loadWorths();
     }
 
-   public double getSpawnerWorth(FactionCache factionCache)
-   {
-       double spawnerWorth = 0.0;
-       for (Map.Entry<EntityType, Integer> spawner : factionCache.getSpawners().entrySet())
-       {
-           EntityType type = spawner.getKey();
-           int amount = spawner.getValue();
-           spawnerWorth += (long) (getSpawnerWorth(type) * amount);
-       }
+    public double getSpawnerWorth(FactionCache factionCache)
+    {
+        double spawnerWorth = 0.0;
+        for (Map.Entry<EntityType, Integer> spawner : factionCache.getSpawners().entrySet())
+        {
+            EntityType type = spawner.getKey();
+            int amount = spawner.getValue();
+            spawnerWorth += (long) (getSpawnerWorth(type) * amount);
+        }
 
-       return spawnerWorth;
-   }
+        return spawnerWorth;
+    }
 
     public double getBlockWorth(FactionCache factionCache)
     {
@@ -86,7 +85,6 @@ public class WorthManager
             if (spawnerWorth.getEntityType() == entityType)
                 found.set(true);
         });
-        System.out.print(entityType + " fpodadadadadiudn");
         if (found.get())
         {
             cache.addSpawner(entityType);
@@ -103,42 +101,32 @@ public class WorthManager
 
     public void updateLeaderboard()
     {
+        this.leaderboard.clear();
         for (FactionCache cache : plugin.getCacheManager().getAllFactionCaches())
         {
             this.leaderboard.put(cache, this.getOverallWorth(cache));
         }
     }
 
+    public int getLeaderboardPlacement(FactionCache cache)
+    {
+        int accumulator = 1;
+        for (Map.Entry<FactionCache, Double> entry : this.getSortedLeaderBoard().entrySet())
+        {
+            if (entry.getKey().equals(cache))
+            {
+                return accumulator;
+            }
+            accumulator++;
+        }
+        System.out.print("FUCK");
+        return -99;
+    }
 
-
-//    private void updateWorth(FactionCache factionCache)
-//    {
-//        double blockWorth = 0;
-//        double spawnerWorth = 0;
-//        double overallWorth = 0;
-//
-//        Map<Material, Integer> blocks = factionCache.getBlocks();
-//        Map<EntityType, Integer> spawners = factionCache.getSpawners();
-//
-//        for (Map.Entry<EntityType, Integer> spawner : factionCache.getSpawners().entrySet())
-//        {
-//            EntityType type = spawner.getKey();
-//            int amount = spawner.getValue();
-//            spawnerWorth += (long) (getSpawnerWorth(type) * amount);
-//        }
-//
-//        for (Map.Entry<Material, Integer> block : factionCache.getBlocks().entrySet())
-//        {
-//            Material type = block.getKey();
-//            int amount = block.getValue();
-//            blockWorth += (long) (getBlockWorth(type) * amount);
-//        }
-//        overallWorth = blockWorth + spawnerWorth;
-//
-////        factionCache.setWorth(WorthType.BLOCK, blockWorth);
-////        factionCache.setWorth(WorthType.SPAWNER, spawnerWorth);
-////        factionCache.setWorth(WorthType.OVERALL, spawnerWorth + blockWorth);
-//    }
+    public void clearLeaderboard()
+    {
+        this.leaderboard.clear();
+    }
 
     private double getBlockWorth(Material material)
     {
@@ -152,11 +140,17 @@ public class WorthManager
         return spawner.map(SpawnerWorth::getWorth).orElse(0.0);
     }
 
-
-
-    public void startUpdateTask()
+    public void addLeaderboard(FactionCache cache)
     {
+        this.leaderboard.put(cache, 0.0);
+    }
 
+    public void removeLeaderboard(FactionCache cache)
+    {
+        if (leaderboard.containsKey(cache))
+        {
+            this.leaderboard.remove(cache);
+        }
     }
 
     /**
@@ -181,7 +175,6 @@ public class WorthManager
             spawnerWorths.add(new SpawnerWorth(entity, worth, placeholder));
         });
     }
-
 
 
 }

@@ -3,13 +3,11 @@ package io.github.evancolewright.royaleftop.utils;
 import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
 import io.github.evancolewright.royaleftop.RoyaleFTop;
-import io.github.evancolewright.royaleftop.entity.BlockWorth;
-import io.github.evancolewright.royaleftop.entity.FactionCache;
-import io.github.evancolewright.royaleftop.entity.SpawnerWorth;
-import io.github.evancolewright.royaleftop.entity.WorthType;
+import io.github.evancolewright.royaleftop.models.BlockWorth;
+import io.github.evancolewright.royaleftop.models.FactionCache;
+import io.github.evancolewright.royaleftop.models.SpawnerWorth;
 import io.github.evancolewright.royaleftop.managers.WorthManager;
 import mkremins.fanciful.FancyMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -17,9 +15,15 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class PageHandler
 {
+    /**
+     *
+     * TODO  substantial cleanup (dont judge I was rushing)
+     */
+
     private final RoyaleFTop plugin;
     private final FileConfiguration config;
     private final WorthManager worthManager;
@@ -36,19 +40,39 @@ public class PageHandler
 
     public void sendPage(Player player, int page)
     {
-        player.sendMessage(ChatUtils.colorize(config.getString("top_list.top_border")
-                .replace("{PAGE}", String.valueOf(page))));
-
         int perPage = config.getInt("top_list.per_page");
+
         int start = (page - 1) * perPage;
         int end = start + perPage;
         if (end > this.caches.size())
         {
             end = this.caches.size();
         }
+        List<FancyMessage> send;
 
-        List<FancyMessage> send = getAllFTopValues().subList(start, end);
+        try {
+            send = getAllFTopValues().subList(start, end);
+        } catch(Exception exception)
+        {
+            send = getAllFTopValues().subList(0, end);
+            page = 1;
+        }
+
+
+        if (send.isEmpty())
+        {
+            page = 1;
+            send = getAllFTopValues().subList(0, end);
+        }
+
+        for (String s : ChatUtils.colorize(config.getStringList("top_list.top_border")))
+        {
+            player.sendMessage(s.replace("{PAGE}", String.valueOf(page)).replace("{MAX_PAGE}", String.valueOf((int) Math.ceil((double)getAllFTopValues().size() / (double)perPage))).replace("{AMOUNT}", String.valueOf(plugin.getAllPlayerFactions().size())));
+        }
+
         send.forEach(message -> message.send(player));
+        // send bottom border
+        ChatUtils.colorize(config.getStringList("top_list.bottom_border")).forEach(string -> player.sendMessage(string.replace("{MINUTES}", String.valueOf(TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis() - plugin.getRecalculationTask().getPreviousCalculationTimestamp()))).replace("{AMOUNT}", String.valueOf(plugin.getAllPlayerFactions().size()))));
     }
 
     private List<FancyMessage> getAllFTopValues()
@@ -69,7 +93,6 @@ public class PageHandler
         double spawnerWorth = plugin.getWorthManager().getSpawnerWorth(cache);
         double blockWorth = plugin.getWorthManager().getBlockWorth(cache);
         Faction faction = Factions.getInstance().getFactionById(cache.getFactionID());
-        String leaderName = faction.getFPlayerAdmin().getName();
 
         FancyMessage fancyMessage = new FancyMessage(
                 replaceCommonPlaceholders(
@@ -80,8 +103,6 @@ public class PageHandler
 
         List<String> tooltip = new ArrayList<>(this.getHoverMessage(cache));
         fancyMessage.tooltip(ChatUtils.colorize(tooltip));
-
-        fancyMessage.command("/ftop");
 
         return fancyMessage;
     }

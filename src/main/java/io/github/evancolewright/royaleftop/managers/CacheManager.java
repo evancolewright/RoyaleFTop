@@ -2,7 +2,7 @@ package io.github.evancolewright.royaleftop.managers;
 
 import com.massivecraft.factions.Faction;
 import io.github.evancolewright.royaleftop.RoyaleFTop;
-import io.github.evancolewright.royaleftop.entity.FactionCache;
+import io.github.evancolewright.royaleftop.models.FactionCache;
 import lombok.Getter;
 
 import java.util.ArrayList;
