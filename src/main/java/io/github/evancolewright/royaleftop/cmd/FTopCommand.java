@@ -39,7 +39,12 @@ public class FTopCommand implements CommandExecutor, TabExecutor
             {
                 if (plugin.getRecalculationTask().isRunning())
                 {
-                    sendProgressMessage(player);
+                    if (plugin.getRecalculationTask().isCompilingChunks())
+                    {
+                        sendProgressMessage(player, true);
+                        return true;
+                    }
+                    sendProgressMessage(player, false);
                     return false;
                 }
                 pageHandler.sendPage(player, 1);
@@ -48,7 +53,12 @@ public class FTopCommand implements CommandExecutor, TabExecutor
             {
                 if (plugin.getRecalculationTask().isRunning())
                 {
-                    sendProgressMessage(player);
+                    if (plugin.getRecalculationTask().isCompilingChunks())
+                    {
+                        sendProgressMessage(player, true);
+                        return true;
+                    }
+                    sendProgressMessage(player, false);
                     return false;
                 }
                 if (isInt(args[0]))
@@ -67,7 +77,8 @@ public class FTopCommand implements CommandExecutor, TabExecutor
                         {
                             player.sendMessage(ChatColor.RED + "Recalculation task is already running!");
 
-                        } else {
+                        } else
+                        {
                             plugin.getRecalculationTask().initialize();
                         }
                     } else if (sub.equalsIgnoreCase("terminate"))
@@ -77,7 +88,8 @@ public class FTopCommand implements CommandExecutor, TabExecutor
                             plugin.getRecalculationTask().terminate();
                             player.sendMessage(ChatColor.GREEN + "Recalculation task has been cancelled.");
 
-                        } else {
+                        } else
+                        {
                             player.sendMessage(ChatColor.RED + "A recalculation task is not running!");
                         }
                     } else if (sub.equalsIgnoreCase("reload"))
@@ -118,22 +130,44 @@ public class FTopCommand implements CommandExecutor, TabExecutor
         }
     }
 
-    private void sendProgressMessage(Player player)
+    private void sendProgressMessage(Player player, boolean compilingChunks)
     {
         List<String> recalc = new ArrayList<>();
 
-        for (String s : plugin.getConfig().getStringList("messages.calculating_ftop"))
+        if (compilingChunks)
         {
-            recalc.add(s.replace("{PROGRESS}",
-                    ProgressBar.getProgressBar(
-                            plugin.getRecalculationTask().getChunkStackSize(),
-                            plugin.getRecalculationTask().getInitialSize(),
-                            40,
-                            '|',
-                            ChatColor.RED, ChatColor.GREEN)));
+            System.out.print("current " + plugin.getRecalculationTask().getCurrentCompilingIndex() + ":" + plugin.getRecalculationTask().getMaxCurrentCompilingIndex());
+            for (String s : plugin.getConfig().getStringList("messages.compiling_ftop"))
+            {
+                recalc.add(s.replace("{PROGRESS}",
+                        ProgressBar.getProgressBarCompiling(
+                                plugin.getRecalculationTask().getCurrentCompilingIndex(),
+                                plugin.getRecalculationTask().getMaxCurrentCompilingIndex()
+                                ,
+                                40,
+                                '|',
+                                ChatColor.RED, ChatColor.GREEN)));
+            }
+
+            ChatUtils.sendMessage(player, recalc);
+
+        } else
+        {
+            System.out.print("current " + plugin.getRecalculationTask().getChunkStackSize() + ":" + plugin.getRecalculationTask().getInitialSize());
+            for (String s : plugin.getConfig().getStringList("messages.calculating_ftop"))
+            {
+                recalc.add(s.replace("{PROGRESS}",
+                        ProgressBar.getProgressBar(
+                                plugin.getRecalculationTask().getChunkStackSize(),
+                                plugin.getRecalculationTask().getInitialSize(),
+                                40,
+                                '|',
+                                ChatColor.RED, ChatColor.GREEN)));
+            }
+
+            ChatUtils.sendMessage(player, recalc);
         }
 
-        ChatUtils.sendMessage(player, recalc);
 
     }
 }

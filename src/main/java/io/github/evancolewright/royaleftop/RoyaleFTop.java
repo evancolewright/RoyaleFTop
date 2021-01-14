@@ -28,7 +28,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -133,9 +135,9 @@ public final class RoyaleFTop extends JavaPlugin
         this.pluginManager.registerEvents(new CommandListener(this), this);
     }
 
-    public Set<Faction> getAllPlayerFactions()
+    public List<Faction> getAllPlayerFactions()
     {
-        final Set<Faction> playerFactions = new HashSet<>(Factions.getInstance().getAllFactions());
+        final List<Faction> playerFactions = new ArrayList<>(Factions.getInstance().getAllFactions());
 
         // Remove System factions
         playerFactions.remove(Factions.getInstance().getWilderness());

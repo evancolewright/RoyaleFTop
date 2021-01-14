@@ -51,7 +51,10 @@ messages:
   usage: "&cUsage: /f top <page>"
   calculating_ftop:
     - "&7&l(&b&l!&7&l) &bFactionsTop is currently recalculating!"
-    - "&b * &7Progress&7: &b[{PROGRESS}&b]"
+    - "&b * &7Progress&7: &b[{PROGRESS}&b] &7(&bCalculating all chunks&7)"
+  compiling_ftop:
+    - "&7&l(&b&l!&7&l) &bFactionsTop is currently recalculating!"
+    - "&b * &7Progress&7: &b[{PROGRESS}&b] &7(&bCompiling all chunks&7)"
 
 # =====================================================================================================================
 # TOP LIST

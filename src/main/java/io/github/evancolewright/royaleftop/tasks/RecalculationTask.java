@@ -1,6 +1,7 @@
 package io.github.evancolewright.royaleftop.tasks;
 
 import com.google.common.collect.Lists;
+import com.massivecraft.factions.Board;
 import com.massivecraft.factions.FLocation;
 import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
@@ -10,13 +11,10 @@ import io.github.evancolewright.royaleftop.utils.ChatUtils;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
-import org.bukkit.ChunkSnapshot;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -39,19 +37,25 @@ public class RecalculationTask implements Runnable
     @Getter
     private int currentSize;
 
-    private boolean isCompilingChunks;
+    private int compileTaskID;
 
     @Getter
     private long previousCalculationTimestamp = 0;
 
     @Getter
-    private static boolean hasFinishedInitialCalcultion = false;
+    private static boolean hasFinishedInitialCalcultion = true;
+
+    private ChunkCompilerTask chunkCompiler;
+
+    @Getter
+    private boolean compilingChunks = true;
 
 
     public RecalculationTask(RoyaleFTop plugin)
     {
         this.plugin = plugin;
         this.config = plugin.getConfig();
+
 
         executorService = Executors.newSingleThreadExecutor();
     }
@@ -64,14 +68,9 @@ public class RecalculationTask implements Runnable
             {
                 this.executorService = Executors.newSingleThreadExecutor();
             }
-            isCompilingChunks = true;
-            this.chunkRunnerTask = new ChunkScannerTask(plugin);
-            this.initialSize = chunkStack.size();
-            this.currentSize = 0;
+            this.chunkCompiler = new ChunkCompilerTask(this, getAllChunks());
             this.startTime = System.currentTimeMillis();
-            plugin.getCacheManager().getAllFactionCaches().forEach(cache -> cache.reset());
-            plugin.getWorthManager().clearLeaderboard();
-            this.executorService.submit(this.chunkRunnerTask);
+            this.compileTaskID = this.chunkCompiler.runTaskTimer(plugin, 0, 1).getTaskId();
             this.taskID = plugin.getServer().getScheduler().scheduleSyncRepeatingTask(plugin, this, 0, 1);
             Bukkit.getOnlinePlayers().forEach(player -> ChatUtils.sendMessage(player, config.getStringList("messages.recalculation_starting")));
         }
@@ -83,6 +82,7 @@ public class RecalculationTask implements Runnable
         {
             chunkStack.clear();
             plugin.getServer().getScheduler().cancelTask(taskID);
+            plugin.getServer().getScheduler().cancelTask(compileTaskID);
             executorService.shutdown();
             Bukkit.getOnlinePlayers().forEach(player -> ChatUtils.sendMessage(player, config.getStringList("messages.recalculation_completed")));
         }
@@ -99,11 +99,34 @@ public class RecalculationTask implements Runnable
         return this.chunkStack.size();
     }
 
+    public void queueChunk(LazyChunk chunk)
+    {
+        this.chunkStack.add(chunk);
+    }
+
     @Override
     public void run()
     {
+        if (chunkCompiler.isRunning())
+        {
+            return;
+        }
+        else if (compilingChunks)
+        {
+            this.compilingChunks = false;
+            this.chunkRunnerTask = new ChunkScannerTask(plugin);
+            this.initialSize = chunkStack.size();
+            this.plugin.getServer().getScheduler().cancelTask(compileTaskID);
+            this.currentSize = 0;
+            plugin.getCacheManager().getAllFactionCaches().forEach(cache -> cache.reset());
+            plugin.getWorthManager().clearLeaderboard();
+            this.executorService.submit(this.chunkRunnerTask);
+            return;
+        }
+
+
         int deployAmount = config.getInt("settings.recalcuation_chunks_each_tick");
-        while (isRunning())
+        while (isRunning() && !this.compilingChunks)
         {
             if (deployAmount-- <= 0)
             {
@@ -121,9 +144,10 @@ public class RecalculationTask implements Runnable
             }
         }
 
-        if (!isRunning())
+        if (!isRunning() && hasFinishedInitialCalcultion)
         {
             this.plugin.getServer().getScheduler().cancelTask(taskID);
+
             this.plugin.getWorthManager().updateLeaderboard();
             Bukkit.getOnlinePlayers().forEach(player -> ChatUtils.sendMessage(player, getCompletionMessage(System.currentTimeMillis() - startTime)));
             this.previousCalculationTimestamp = System.currentTimeMillis();
@@ -133,13 +157,10 @@ public class RecalculationTask implements Runnable
                 @Override
                 public void run()
                 {
-                    if (!hasFinishedInitialCalcultion)
-                    {
-                        hasFinishedInitialCalcultion = true;
-                    }
                     executorService.shutdown();
                     plugin.getWorthManager().updateLeaderboard();
                     plugin.getDatabaseManager().saveFTopData();
+                    compilingChunks = true;
 
                 }
             }.runTaskLater(this.plugin, 60);
@@ -157,16 +178,37 @@ public class RecalculationTask implements Runnable
         return formattedCompletionMessage;
     }
 
-//    private int getAllChunks()
-//    {
-//        List<LazyChunk> chunks = Lists.newArrayList();
-//        Bukkit.broadcastMessage("starting all claims");
-//        int acc = 0;
-//        for (Faction faction : plugin.getAllPlayerFactions())
-//        {
-//            for (FLocation location : faction.getAllClaims())
-//            {
-//            }
-//        }
-//    }
+    /**
+     * This method was lagging really bad prior.  I resorted to all sorts of different methods.
+     * I am relatively satisfied with the ChunkCompiler implementation.  There was really no other way to
+     * go about looping through 10k+ objects and calling Spigot methods all at the same time.
+     *
+     * @return  A list of lists of fLocation
+     */
+    private List<List<FLocation>> getAllChunks()
+    {
+        long start = System.currentTimeMillis();
+        List<List<FLocation>> allClaims = new ArrayList<>();
+        int acc = 0;
+        for (Faction faction : plugin.getAllPlayerFactions())
+        {
+            allClaims.add(new ArrayList<>(faction.getAllClaims()));
+        }
+        return allClaims;
+    }
+
+    protected RoyaleFTop getPlugin()
+    {
+        return plugin;
+    }
+
+    public int getCurrentCompilingIndex()
+    {
+        return this.chunkCompiler.getCurrentIndex();
+    }
+
+    public int getMaxCurrentCompilingIndex()
+    {
+        return this.chunkCompiler.getMaxIndex();
+    }
 }
