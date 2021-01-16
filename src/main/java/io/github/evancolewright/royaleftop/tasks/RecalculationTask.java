@@ -27,11 +27,11 @@ public class RecalculationTask implements Runnable
     private ExecutorService executorService;
     private final Stack<LazyChunk> chunkStack = new Stack<>();
     private ChunkScannerTask chunkRunnerTask;
+    private ChunkCompilerTask chunkCompiler;
 
     private long startTime;
     private int taskID;
 
-    // Progress bar
     @Getter
     private int initialSize = 0;
     @Getter
@@ -41,11 +41,6 @@ public class RecalculationTask implements Runnable
 
     @Getter
     private long previousCalculationTimestamp = 0;
-
-    @Getter
-    private static boolean hasFinishedInitialCalcultion = true;
-
-    private ChunkCompilerTask chunkCompiler;
 
     @Getter
     private boolean compilingChunks = true;
@@ -144,10 +139,9 @@ public class RecalculationTask implements Runnable
             }
         }
 
-        if (!isRunning() && hasFinishedInitialCalcultion)
+        if (!isRunning())
         {
             this.plugin.getServer().getScheduler().cancelTask(taskID);
-
             this.plugin.getWorthManager().updateLeaderboard();
             Bukkit.getOnlinePlayers().forEach(player -> ChatUtils.sendMessage(player, getCompletionMessage(System.currentTimeMillis() - startTime)));
             this.previousCalculationTimestamp = System.currentTimeMillis();
@@ -163,7 +157,7 @@ public class RecalculationTask implements Runnable
                     compilingChunks = true;
 
                 }
-            }.runTaskLater(this.plugin, 60);
+            }.runTaskLater(this.plugin, 3 * 20);
         }
     }
 
@@ -171,7 +165,7 @@ public class RecalculationTask implements Runnable
     {
         int min = (int) TimeUnit.MILLISECONDS.toMinutes(milliSeconds) % 60;
         int sec = (int) TimeUnit.MILLISECONDS.toSeconds(milliSeconds) % 60;
-        String time = String.format("%2dm%2ds", min, sec);
+        String time = String.format("%2dm %2ds", min, sec);
 
         List<String> formattedCompletionMessage = new ArrayList<>();
         config.getStringList("messages.recalculation_completed").forEach(s -> formattedCompletionMessage.add(s.replace("{TIME}", time)));

@@ -1,10 +1,8 @@
 package io.github.evancolewright.royaleftop.managers;
 
-import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
 import io.github.evancolewright.royaleftop.RoyaleFTop;
 import io.github.evancolewright.royaleftop.database.MySQLDatabase;
-import io.github.evancolewright.royaleftop.models.FactionCache;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.bukkit.configuration.ConfigurationSection;
@@ -13,10 +11,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public final class DatabaseManager
 {
@@ -34,6 +31,10 @@ public final class DatabaseManager
         this.log = plugin.getLog();
     }
 
+    /**
+     * Setup the Database table for dumping
+     *
+     */
     public void setupDatabase()
     {
         final ConfigurationSection database = config.getConfigurationSection("database");
@@ -44,7 +45,6 @@ public final class DatabaseManager
 
         if (database.getBoolean("enabled"))
         {
-            // Dispatch to another thread because this process will easily freeze the main thread.
             new BukkitRunnable()
             {
                 @SneakyThrows
@@ -52,23 +52,13 @@ public final class DatabaseManager
                 public void run()
                 {
                     mySQL = new MySQLDatabase(host, name, username, password);
-                    try
-                    {
-                        mySQL.openConnection();
-                        log.info("Successfully connected to a MySQL Database!");
-                        mySQL.executeUpdate("CREATE TABLE IF NOT EXISTS FactionsTop(" +
-                                "placement INT NOT NULL PRIMARY KEY," + "faction_name VARCHAR(16) NOT NULL," +
-                                "faction_leader_uuid VARCHAR(36) NOT NULL," +
-                                "spawner_worth FLOAT NOT NULL," +
-                                "block_worth FLOAT NOT NULL)");
-                    } catch (ClassNotFoundException | SQLException e)
-                    {
-                       e.printStackTrace();
-                    }
-                    finally
-                    {
-                        mySQL.closeConnection();
-                    }
+                    mySQL.openConnection();
+                    log.info("Successfully connected to a MySQL Database!");
+                    mySQL.executeUpdate("CREATE TABLE IF NOT EXISTS FactionsTop(" +
+                            "placement INT NOT NULL PRIMARY KEY," + "faction_name VARCHAR(16) NOT NULL," +
+                            "faction_leader_uuid VARCHAR(36) NOT NULL," +
+                            "spawner_worth FLOAT NOT NULL," +
+                            "block_worth FLOAT NOT NULL)", true);
                 }
             }.runTaskAsynchronously(plugin);
 
@@ -78,52 +68,66 @@ public final class DatabaseManager
         }
     }
 
+    /**
+     * Dumps all FTop data to external DB.
+     */
     public void saveFTopData()
     {
-        List<CacheData> cacheDataList = new ArrayList<>();
+        final Factions factions = Factions.getInstance();
         final WorthManager worthManager = plugin.getWorthManager();
-        for (Map.Entry<FactionCache, Double> entry : plugin.getWorthManager().getSortedLeaderBoard().entrySet())
-        {
-            Faction faction = Factions.getInstance().getFactionById(entry.getKey().getFactionID());
-            cacheDataList.add(new CacheData(worthManager.getLeaderboardPlacement(entry.getKey()), faction.getTag(), faction.getFPlayerAdmin().getOfflinePlayer().getUniqueId().toString(), worthManager.getSpawnerWorth(entry.getKey()), worthManager.getBlockWorth(entry.getKey())));
-        }
+
+        List<CacheData> cacheDataList = worthManager.getSortedLeaderBoard().entrySet().stream().map(entry -> new CacheData(worthManager.getLeaderboardPlacement(entry.getKey()),
+                factions.getFactionById(entry.getKey().getFactionID()).getTag(),
+                factions.getFactionById(entry.getKey().getFactionID()).getFPlayerAdmin().getOfflinePlayer().getUniqueId().toString(),
+                worthManager.getSpawnerWorth(entry.getKey()),
+                worthManager.getBlockWorth(entry.getKey())
+        )).collect(Collectors.toList());
+
         new BukkitRunnable()
         {
-            @SneakyThrows
             @Override
             public void run()
             {
+                final long startTime = System.currentTimeMillis();
+                PreparedStatement preparedStatement = null;
                 try
                 {
                     mySQL.openConnection();
-                    mySQL.executeUpdate("TRUNCATE FactionsTop");
-                    PreparedStatement statement = mySQL.getConnection().prepareStatement("INSERT INTO FactionsTop(placement, faction_name, faction_leader_uuid, spawner_worth, block_worth) VALUES (?,?,?,?,?)");
-                    cacheDataList.forEach(cache -> {
-                        try
-                        {
-                            statement.setString(1, String.valueOf(cache.placement));
-                            statement.setString(2, cache.factionName);
-                            statement.setString(3, cache.factionLeader);
-                            statement.setString(4, String.valueOf(cache.spawnerWorth));
-                            statement.setString(5, String.valueOf(cache.blockWorth));
-                            statement.addBatch();
-                        } catch (SQLException throwables)
-                        {
-                            throwables.printStackTrace();
-                        }
-                    });
-                    statement.executeBatch();
+                    mySQL.executeUpdate("TRUNCATE FactionsTop", false);
+                    preparedStatement = mySQL.getConnection().prepareStatement("INSERT INTO FactionsTop(placement, faction_name, faction_leader_uuid, spawner_worth, block_worth) VALUES (?,?,?,?,?)");
+                    for (CacheData cache : cacheDataList)
+                    {
+                        preparedStatement.setString(1, String.valueOf(cache.placement));
+                        preparedStatement.setString(2, cache.factionName);
+                        preparedStatement.setString(3, cache.factionLeader);
+                        preparedStatement.setString(4, String.valueOf(cache.spawnerWorth));
+                        preparedStatement.setString(5, String.valueOf(cache.blockWorth));
+                        preparedStatement.addBatch();
+                    }
+                    preparedStatement.executeBatch();
+                    log.info("Saved all FactionTop data to external MySQL database!  Took: " + (System.currentTimeMillis() - startTime) + "ms.");
 
-                } catch (ClassNotFoundException | SQLException e)
+                } catch (SQLException e)
                 {
+                    log.severe("Failed to save Faction Data for FactionsTop!");
                     e.printStackTrace();
-                }
-                finally {
-                   mySQL.closeConnection();
+                } finally
+                {
+                    try
+                    {
+                        if (preparedStatement != null)
+                            preparedStatement.close();
+                    } catch (SQLException exception)
+                    {
+                        exception.printStackTrace();
+                    } finally
+                    {
+                        mySQL.closeConnection();
+                    }
                 }
 
             }
-        }.runTaskLater(this.plugin, 100);
+        }.runTaskLaterAsynchronously(this.plugin, 100);
     }
 
 

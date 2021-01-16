@@ -9,6 +9,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 
+import java.util.stream.Collectors;
+
 public class ChatListeners implements Listener
 {
 
@@ -39,5 +41,13 @@ public class ChatListeners implements Listener
                 event.setFormat(format.replace("{FTOP_PLACE}", String.valueOf(plugin.getWorthManager().getLeaderboardPlacement(factionCache))));
             }
         }
+    }
+
+    /*
+        TODO
+     */
+    private String replacePlacement(FactionCache cache, int place)
+    {
+        return null;
     }
 }

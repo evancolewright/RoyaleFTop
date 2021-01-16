@@ -7,6 +7,7 @@
 
 package io.github.evancolewright.royaleftop;
 
+import com.massivecraft.factions.Board;
 import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
 import io.github.evancolewright.royaleftop.cmd.FTopCommand;
@@ -110,13 +111,7 @@ public final class RoyaleFTop extends JavaPlugin
     @Override
     public void onDisable()
     {
-        try
-        {
-            this.databaseManager.getMySQL().closeConnection();
-        } catch (SQLException throwables)
-        {
-            throwables.printStackTrace();
-        }
+        this.databaseManager.getMySQL().closeConnection();
     }
 
     private void initFiles()

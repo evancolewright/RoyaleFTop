@@ -6,7 +6,6 @@ import com.massivecraft.factions.Faction;
 import io.github.evancolewright.royaleftop.models.FactionCache;
 import io.github.evancolewright.royaleftop.models.LazyChunk;
 import lombok.Getter;
-import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
@@ -16,12 +15,11 @@ public class ChunkCompilerTask extends BukkitRunnable
 {
     private RecalculationTask recalculationTask;
     private List<FLocation> allChunks;
-
     @Getter
     private int currentIndex = 0;
-
     @Getter
     private int maxIndex;
+    private final int compilationChunksPerTick;
 
     @Getter
     private boolean isRunning = true;
@@ -30,6 +28,7 @@ public class ChunkCompilerTask extends BukkitRunnable
     {
         this.recalculationTask = recalculationTask;
         this.allChunks = compileToSingleList(allChunks);
+        this.compilationChunksPerTick = recalculationTask.getPlugin().getConfig().getInt("settings.compilation_chunks_each_tick");
 
         this.maxIndex = this.allChunks.size() - 1;
     }
@@ -38,7 +37,7 @@ public class ChunkCompilerTask extends BukkitRunnable
     @Override
     public void run()
     {
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < compilationChunksPerTick; i++)
         {
             if (this.currentIndex > this.maxIndex)
             {

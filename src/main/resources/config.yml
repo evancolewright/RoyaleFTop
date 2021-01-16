@@ -1,15 +1,9 @@
-# PartyFactionsTop
+# RoyaleFTop
 # v1.0 (By ThreadSafety a.k.a evancolewright)
 # Official File Configuration
 
-# =====================================================================================================================
-# DATABASE SETTINGS
-
-# The database is NOT required, and is not used by the plugin internally.
-# The purpose of the database is simply to dump values from each calculation into an
-# online source for the purpose of displaying them on the web.
-# This makes it possible to implement a "Top factions" interface into our website in the future.
-# =====================================================================================================================
+# Database settings
+# Data is saved after each calculation.
 database:
   enabled: true
   host: "198.245.51.96"
@@ -17,25 +11,18 @@ database:
   username: "db_224859"
   password: "eb550d4603"
 
-# =====================================================================================================================
-# FTOP SETTINGS
-#
-# These are the settings and timings for the FTop.
-# These settings can make or break the performance of the server and the plugin itself.  It is recommended that
-# you keep the current settings that are here by default as I have tested them EXTENSIVELY, and they work on even
-# the LARGEST workloads (10,000+ chunk scans).  Nevertheless, feel free to test as much as you like.
-# =====================================================================================================================
+
+# Settings for the FTop Calculation process.
+# The Overall Calculation process has 2 stages: Compilation and Calculation
+# Compilation: The process of compiling all chunks on the server to a single list (Sync)
+# Calculation: The process of evaluating each individual chunk for blocks of worth (Async)
+# The compilation process can cause server lag, so a lower number is preferred.  With a lower number comes longer calculation times, however.
 settings:
-  recalculation_timeout: 60  # This is the duration between each ftop calculation in MINUTES.
-  recalcuation_chunks_each_tick: 20  # During the calculation, this is how many chunks will be added to the queue for recalculation every 1/20 of a second. Default is 400 chunks per second.
-  # include_player_balances: false  N/A
+  recalculation_timeout: 60  # This is the duration between each ftop calculation in minutes.
+  recalcuation_chunks_each_tick: 20  # During the calculation, this is how many chunks will be added to the queue for recalculation every 1/20 of a second.  This is done on asynchronously, so up to 50 is fine.
+  compilation_chunks_each_tick: 10 # During the compilation process, this is how many chunks will get compiled every 1/20 of a second.  This process is completed on the main thread, so please be careful.
 
-# =====================================================================================================================
-# MESSAGES
-#
-# Yea, this section is pretty self-explanatory.
-# =====================================================================================================================
-
+# Plugin messages
 messages:
   recalculation_starting:
     - ""
@@ -47,23 +34,30 @@ messages:
     - "&7&l(&b&l!&7&l) &bFactionsTop recalculation has completed!"
     - "&b * &7Took: &b{TIME}"
     - ""
-
   usage: "&cUsage: /f top <page>"
   calculating_ftop:
     - "&7&l(&b&l!&7&l) &bFactionsTop is currently recalculating!"
-    - "&b * &7Progress&7: &b[{PROGRESS}&b] &7(&bCalculating all chunks&7)"
+    - "&b * &7Progress&7: &b[{PROGRESS}&b] &b[2/2] &7(&bCalculating all chunks&7)"
   compiling_ftop:
     - "&7&l(&b&l!&7&l) &bFactionsTop is currently recalculating!"
-    - "&b * &7Progress&7: &b[{PROGRESS}&b] &7(&bCompiling all chunks&7)"
+    - "&b * &7Progress&7: &b[{PROGRESS}&b] &b[1/2] &7(&bCompiling all chunks&7)"
 
-# =====================================================================================================================
-# TOP LIST
+
+# All chat settings.  Please place {FTOP_PLACE} in your chat format to use!
+chat:
+  format: "#"  # Will append this character(s) before the number placement in {FTOP_PLACE}
+  no_faction: "-"  # Will append this
+  default_color: "&f"  # The default color for the placements
+  placements:
+    1: "&c"
+    2: "&b"
+    3: "&7"
+    4: "&6"
+    5: "&9"
+
+# The actual /ftop list formatting and tooltip.
 #
-# This is the message that you receive when performing /f top
-# You may use the placeholders that are set in the worths section
-# anywhere you wish inside here!!!
-#
-# Placeholders:
+# Placeholders
 # {LEADER} - the leader of the faction
 # {FACTION} - the faction
 # {OVERALL_WORTH} - the overall worth of the faction
@@ -73,11 +67,16 @@ messages:
 # {MAX_PAGE} - the max page of FTOP
 # {PLACE} - the current position of the faction on ftop
 
-# =====================================================================================================================
 top_list:
   per_page: 10
   top_border:
     - "&b&l(!) &r&bFactions Top &7[&aPage {PAGE}/{MAX_PAGE}]"
+    - ""
+  bottom_border:
+    - ""
+    - "&b* &7Hover over a Faction for their &bValue Breakdown"
+    - "&b* &7Currently Tracking: &b{AMOUNT} Factions &7[&7Every Hour&7]"
+    - "&b* &7Last Update was &b{MINUTES} minutes&7 ago."
   format: "&b&l* &a#{PLACE} &f{FACTION} &7 - {OVERALL_WORTH}"
   tooltip:
     - "&b&l(!) Faction Breakdown: {FACTION}"
@@ -98,17 +97,13 @@ top_list:
     - ""
     - "&b* &7Blocks:"
     - "&b - &7Hopper: &b%hopper%"
-    - "&b - &7Becon: &b%beacon%"
-    - "&b&l(!) &r&bClick to view spawners (Coming Soon)"
-  bottom_border:
+    - "&b - &7Beacon: &b%beacon%"
     - ""
-    - "&b* &7Hover over a Faction for their &bValue Breakdown"
-    - "&b* &7Currently Tracking: &b{AMOUNT} Factions &7[&7Every Hour&7]"
-    - "&b* &7Last Update was &b{MINUTES} minutes&7 ago."
+    - "&b&l(!) &r&bClick to view spawners (Coming Soon)"
 
 
 # The worths of each item.
-# Again, the placeholder you set here can be used in the tooltip in the section above!!
+# All placeholder you set here can be used in the tooltip above!
 worths:
   blocks:
     1:
