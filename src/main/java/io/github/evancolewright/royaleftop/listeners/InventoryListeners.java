@@ -29,12 +29,11 @@ public class InventoryListeners implements Listener
 
     private boolean isSpawnerBreakDown(String name)
     {
-        name = ChatColor.translateAlternateColorCodes('&', name);
+        name = ChatUtils.colorize(name);
         for (Faction faction : plugin.getAllPlayerFactions())
         {
             if (ChatUtils.colorize(plugin.getConfig().getString("spawner_gui.name").replace("{FACTION}", faction.getTag())).equals(name))
             {
-                System.out.print("Test:  " + name + " :: " + plugin.getConfig().getString("spawner_gui.name").replace("{FACTION}", faction.getTag()));
                 return true;
             }
         }
