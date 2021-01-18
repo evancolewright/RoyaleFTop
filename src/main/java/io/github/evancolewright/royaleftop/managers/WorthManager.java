@@ -92,6 +92,11 @@ public class WorthManager
 
     }
 
+    public double getWorth(EntityType entityType)
+    {
+        return this.spawnerWorths.stream().filter(spawnerWorth -> spawnerWorth.getEntityType() == entityType).findFirst().get().getWorth();
+    }
+
     public Map<FactionCache, Double> getSortedLeaderBoard()
     {
         WorthSorter<FactionCache, Double> sorter = new WorthSorter<>(this.leaderboard);
@@ -119,7 +124,6 @@ public class WorthManager
             }
             accumulator++;
         }
-        System.out.print("FUCK");
         return -99;
     }
 

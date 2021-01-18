@@ -7,14 +7,15 @@
 
 package io.github.evancolewright.royaleftop;
 
-import com.massivecraft.factions.Board;
 import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
 import io.github.evancolewright.royaleftop.cmd.FTopCommand;
+import io.github.evancolewright.royaleftop.cmd.FTopSpawnerCommand;
 import io.github.evancolewright.royaleftop.database.MySQLDatabase;
 import io.github.evancolewright.royaleftop.listeners.ChatListeners;
 import io.github.evancolewright.royaleftop.listeners.CommandListener;
 import io.github.evancolewright.royaleftop.listeners.FactionListeners;
+import io.github.evancolewright.royaleftop.listeners.InventoryListeners;
 import io.github.evancolewright.royaleftop.managers.CacheManager;
 import io.github.evancolewright.royaleftop.managers.DatabaseManager;
 import io.github.evancolewright.royaleftop.managers.WorthManager;
@@ -28,18 +29,14 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Logger;
 
 public final class RoyaleFTop extends JavaPlugin
 {
     @Getter
     private Economy economy = null;
-    private MySQLDatabase mySQL;
 
     @Getter
     private final Logger log = getLogger();
@@ -55,7 +52,6 @@ public final class RoyaleFTop extends JavaPlugin
 
     @Getter
     private RecalculationTask recalculationTask;
-
 
     private PluginCommand ftopCommand;
     private FTopCommand fTopCommandInstance;
@@ -90,6 +86,7 @@ public final class RoyaleFTop extends JavaPlugin
             this.getCommand("factionstop").setExecutor(new FTopCommand(this));
             this.getCommand("factionstop").setTabCompleter(new FTopCommand(this));
 
+            this.getCommand("ftopspawners").setExecutor(new FTopSpawnerCommand(this));
             // Schedule update task
             recalculationTask = new RecalculationTask(this);
             new BukkitRunnable()
@@ -128,6 +125,7 @@ public final class RoyaleFTop extends JavaPlugin
         this.pluginManager.registerEvents(new FactionListeners(this), this);
         this.pluginManager.registerEvents(new ChatListeners(this), this);
         this.pluginManager.registerEvents(new CommandListener(this), this);
+        this.pluginManager.registerEvents(new InventoryListeners(this), this);
     }
 
     public List<Faction> getAllPlayerFactions()

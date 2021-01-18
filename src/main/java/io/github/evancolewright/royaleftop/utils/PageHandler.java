@@ -104,6 +104,7 @@ public class PageHandler
         List<String> tooltip = new ArrayList<>(this.getHoverMessage(cache));
         fancyMessage.tooltip(ChatUtils.colorize(tooltip));
 
+        fancyMessage.command("/ftopspawners " + Factions.getInstance().getFactionById(cache.getFactionID()).getTag());
         return fancyMessage;
     }
 

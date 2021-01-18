@@ -99,7 +99,16 @@ top_list:
     - "&b - &7Hopper: &b%hopper%"
     - "&b - &7Beacon: &b%beacon%"
     - ""
-    - "&b&l(!) &r&bClick to view spawners (Coming Soon)"
+  spawner_breakdown_text: "&b&l(!) &r&bClick to view spawners (Coming Soon)"
+
+spawner_gui:
+  name: "&b{FACTION}'s &7Spawner Breakdown"
+  head_name: "&7(&b!&7) &b{SPAWNER} Spawners"
+  head_lore:
+    - "&b* &7Amount: &b{AMOUNT}"
+    - "&b* &7Value per spawner: &b{VALUE}"
+    - "&7Total Contribution to faction: &b&n{TOTAL}"
+
 
 
 # The worths of each item.

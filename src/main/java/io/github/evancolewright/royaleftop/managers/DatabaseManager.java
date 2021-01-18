@@ -33,7 +33,6 @@ public final class DatabaseManager
 
     /**
      * Setup the Database table for dumping
-     *
      */
     public void setupDatabase()
     {
@@ -133,7 +132,6 @@ public final class DatabaseManager
 
     private class CacheData
     {
-
         int placement;
         String factionName;
         String factionLeader;

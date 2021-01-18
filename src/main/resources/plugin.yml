@@ -12,3 +12,5 @@ commands:
   factionstop:
     aliases:
       - ftop
+  ftopspawners:
+
