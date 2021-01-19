@@ -9,8 +9,7 @@ package io.github.evancolewright.royaleftop;
 
 import com.massivecraft.factions.Faction;
 import com.massivecraft.factions.Factions;
-import io.github.evancolewright.royaleftop.cmd.FTopCommand;
-import io.github.evancolewright.royaleftop.cmd.FTopSpawnerCommand;
+import io.github.evancolewright.royaleftop.cmd.*;
 import io.github.evancolewright.royaleftop.database.MySQLDatabase;
 import io.github.evancolewright.royaleftop.listeners.ChatListeners;
 import io.github.evancolewright.royaleftop.listeners.CommandListener;
@@ -21,6 +20,7 @@ import io.github.evancolewright.royaleftop.managers.DatabaseManager;
 import io.github.evancolewright.royaleftop.managers.WorthManager;
 import io.github.evancolewright.royaleftop.tasks.RecalculationTask;
 import lombok.Getter;
+import lombok.Setter;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
@@ -56,6 +56,10 @@ public final class RoyaleFTop extends JavaPlugin
     private PluginCommand ftopCommand;
     private FTopCommand fTopCommandInstance;
 
+    // Is the ftop update locked?
+    @Getter @Setter
+    private boolean locked = false;
+
     @Override
     public void onEnable()
     {
@@ -84,9 +88,10 @@ public final class RoyaleFTop extends JavaPlugin
             ftopCommand = this.getCommand("factionstop");
             fTopCommandInstance = new FTopCommand(this);
             this.getCommand("factionstop").setExecutor(new FTopCommand(this));
-            this.getCommand("factionstop").setTabCompleter(new FTopCommand(this));
-
             this.getCommand("ftopspawners").setExecutor(new FTopSpawnerCommand(this));
+            this.getCommand("factionstopreload").setExecutor(new FTopReloadCommand(this));
+            this.getCommand("factionstoplock").setExecutor(new FTopLockCommand(this));
+            this.getCommand("factionstoprecalculate").setExecutor(new FTopRecalculateCommand(this));
             // Schedule update task
             recalculationTask = new RecalculationTask(this);
             new BukkitRunnable()
@@ -94,7 +99,8 @@ public final class RoyaleFTop extends JavaPlugin
                 @Override
                 public void run()
                 {
-                    recalculationTask.initialize();
+                    if (!locked)
+                        recalculationTask.initialize();
                 }
             }.runTaskTimer(this, 20, 20 * 60 * getConfig().getInt("settings.recalculation_timeout"));
 

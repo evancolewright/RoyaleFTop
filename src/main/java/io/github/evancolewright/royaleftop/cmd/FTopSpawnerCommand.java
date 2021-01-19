@@ -36,12 +36,15 @@ public class FTopSpawnerCommand implements CommandExecutor
             } else if (args.length == 1)
             {
                 Faction faction = Factions.getInstance().getByTag(args[0]);
-                if (plugin.getCacheManager().getCacheByFaction(faction) != null)
+                if (faction == null)
+                {
+                    player.sendMessage(ChatColor.RED + "Faction not found!");
+
+                } else
                 {
                     new SpawnerBreakdownGUI(plugin, plugin.getCacheManager().getCacheByFaction(faction)).open(player);
-                } else {
-                    player.sendMessage(ChatColor.RED + "Faction not found!");
                 }
+
             }
         }
         return false;

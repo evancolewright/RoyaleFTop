@@ -2,6 +2,7 @@ package io.github.evancolewright.royaleftop.cmd;
 
 import com.sun.javaws.progress.Progress;
 import io.github.evancolewright.royaleftop.RoyaleFTop;
+import io.github.evancolewright.royaleftop.tasks.RecalculationTask;
 import io.github.evancolewright.royaleftop.utils.ChatUtils;
 import io.github.evancolewright.royaleftop.utils.PageHandler;
 import io.github.evancolewright.royaleftop.utils.ProgressBar;
@@ -18,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class FTopCommand implements CommandExecutor, TabExecutor
+public class FTopCommand implements CommandExecutor
 {
 
     private RoyaleFTop plugin;
@@ -31,91 +32,45 @@ public class FTopCommand implements CommandExecutor, TabExecutor
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args)
     {
-        if (sender instanceof Player && command.getName().equalsIgnoreCase("factionstop"))
+        if (sender instanceof Player && (label.equalsIgnoreCase("factionstop") || label.equalsIgnoreCase("ftop")))
         {
             Player player = (Player) sender;
             PageHandler pageHandler = new PageHandler(plugin);
-            if (args.length == 0)
+            RecalculationTask recalculationTask = plugin.getRecalculationTask();
+
+            if (recalculationTask.isRunning())
             {
-                if (plugin.getRecalculationTask().isRunning())
+                if (plugin.getRecalculationTask().isCompilingChunks())
                 {
-                    if (plugin.getRecalculationTask().isCompilingChunks())
-                    {
-                        sendProgressMessage(player, true);
-                        return true;
-                    }
-                    sendProgressMessage(player, false);
-                    return false;
-                }
-                pageHandler.sendPage(player, 1);
-                return true;
-            } else if (args.length == 1)
-            {
-                if (plugin.getRecalculationTask().isRunning())
-                {
-                    if (plugin.getRecalculationTask().isCompilingChunks())
-                    {
-                        sendProgressMessage(player, true);
-                        return true;
-                    }
-                    sendProgressMessage(player, false);
-                    return false;
-                }
-                if (isInt(args[0]))
-                {
-                    pageHandler.sendPage(player, Integer.valueOf(args[0]));
+                    sendProgressMessage(player, true);
                     return true;
-                }
-
-                // Admin commands
-                String sub = args[0];
-                if (player.isOp())
+                } else
                 {
-                    if (sub.equalsIgnoreCase("recalculate"))
+                    sendProgressMessage(player, false);
+                    return false;
+                }
+            } else
+            {
+                if (args.length == 0)
+                {
+                    pageHandler.sendPage(player, 1);
+                } else if (args.length == 1)
+                {
+                    if (isInt(args[0]))
                     {
-                        if (plugin.getRecalculationTask().isRunning())
-                        {
-                            player.sendMessage(ChatColor.RED + "Recalculation task is already running!");
-
-                        } else
-                        {
-                            plugin.getRecalculationTask().initialize();
-                        }
-                    } else if (sub.equalsIgnoreCase("terminate"))
+                        pageHandler.sendPage(player, Integer.parseInt(args[0]));
+                    } else
                     {
-                        if (plugin.getRecalculationTask().isRunning())
-                        {
-                            plugin.getRecalculationTask().terminate();
-                            player.sendMessage(ChatColor.GREEN + "Recalculation task has been cancelled.");
-
-                        } else
-                        {
-                            player.sendMessage(ChatColor.RED + "A recalculation task is not running!");
-                        }
-                    } else if (sub.equalsIgnoreCase("reload"))
-                    {
-                        plugin.reloadConfig();
-                        player.sendMessage(ChatColor.GREEN + "Config reloaded.");
+                        player.sendMessage(ChatColor.RED + "Usage: /ftop <page>");
                     }
+                } else
+                {
+                    player.sendMessage(ChatColor.RED + "Usage: /ftop <page>");
                 }
             }
+
         }
         return false;
-    }
-
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
-    {
-        if (args.length == 1 && sender.isOp() && sender instanceof Player)
-        {
-            List<String> subCmds = new ArrayList<>();
-            subCmds.add("recalculate");
-            subCmds.add("terminate");
-            subCmds.add("reload");
-
-            return subCmds;
-        }
-        return null;
     }
 
     private boolean isInt(String string)
@@ -136,7 +91,6 @@ public class FTopCommand implements CommandExecutor, TabExecutor
 
         if (compilingChunks)
         {
-            System.out.print("current " + plugin.getRecalculationTask().getCurrentCompilingIndex() + ":" + plugin.getRecalculationTask().getMaxCurrentCompilingIndex());
             for (String s : plugin.getConfig().getStringList("messages.compiling_ftop"))
             {
                 recalc.add(s.replace("{PROGRESS}",
@@ -153,7 +107,6 @@ public class FTopCommand implements CommandExecutor, TabExecutor
 
         } else
         {
-            System.out.print("current " + plugin.getRecalculationTask().getChunkStackSize() + ":" + plugin.getRecalculationTask().getInitialSize());
             for (String s : plugin.getConfig().getStringList("messages.calculating_ftop"))
             {
                 recalc.add(s.replace("{PROGRESS}",
@@ -170,4 +123,6 @@ public class FTopCommand implements CommandExecutor, TabExecutor
 
 
     }
+
+
 }

@@ -45,15 +45,14 @@ messages:
 
 # All chat settings.  Please place {FTOP_PLACE} in your chat format to use!
 chat:
-  format: "#"  # Will append this character(s) before the number placement in {FTOP_PLACE}
-  no_faction: "-"  # Will append this
+  format_prefix: "#"  # Will append this character(s) before the number placement in {FTOP_PLACE}
+  no_faction: "*"  # Will append this to players who do not have a faction
   default_color: "&f"  # The default color for the placements
+  # You can continue to add more placement values.  1-100 if you really want.
   placements:
     1: "&c"
     2: "&b"
     3: "&7"
-    4: "&6"
-    5: "&9"
 
 # The actual /ftop list formatting and tooltip.
 #

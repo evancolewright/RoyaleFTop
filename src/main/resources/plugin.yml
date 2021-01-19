@@ -10,7 +10,23 @@ depend:
   - Vault
 commands:
   factionstop:
-    aliases:
-      - ftop
+    aliases: [ftop]
+    description: View top factions
   ftopspawners:
+    aliases:
+      - factionstopspawners
+    description: View spawner breakdown for a faction
+  factionstopreload:
+    aliases:
+      - ftopreload
+    description: Reload the config for the plugin
+  factionstoprecalculate:
+    aliases:
+      - ftoprecalc
+      - factionstoprecalc
+    description: Force recalculate the ftop
+  factionstoplock:
+    aliases: [ftoplock]
+    description: Locks the Ftop from updating further
+
 
